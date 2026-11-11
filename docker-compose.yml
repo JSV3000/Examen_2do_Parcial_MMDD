@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:15-bookworm
+    container_name: db
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - datamart_net
+    ports:
+      - "5432:5432"
+
+  hadoop:
+    build: ./hadoop
+    container_name: hadoop
+    hostname: hadoop
+    volumes:
+      - ./data:/data/input:ro
+      - ./data/output:/data/output
+      - ./mapreduce:/opt/mapreduce
+      - ssh_keys:/ssh_shared
+    networks:
+      - datamart_net
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+
+  api:
+    build: ./api
+    container_name: api
+    hostname: api
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - hadoop
+    volumes:
+      - ./data/output:/data/output
+      - ./scripts:/app/scripts
+      - ssh_keys:/root/.ssh
+    ports:
+      - "5000:5000"
+    networks:
+      - datamart_net
+
+volumes:
+  pgdata:
+  ssh_keys:
+
+networks:
+  datamart_net:
+    driver: bridge
