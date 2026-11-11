@@ -2,6 +2,7 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from flask import Flask, jsonify, request
+import time
 
 app = Flask(__name__)
 
@@ -15,20 +16,28 @@ def get_db_connection():
     )
 
 def init_db():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS resultados_ventas (
-            id SERIAL PRIMARY KEY,
-            metodo_pago VARCHAR(50) NOT NULL,
-            dia_semana VARCHAR(20) NOT NULL,
-            unidades_vendidas BIGINT NOT NULL,
-            UNIQUE(metodo_pago, dia_semana)
-        );
-    """)
-    conn.commit()
-    cur.close()
-    conn.close()
+    while True:
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS resultados_ventas (
+                    id SERIAL PRIMARY KEY,
+                    metodo_pago VARCHAR(50) NOT NULL,
+                    dia_semana VARCHAR(20) NOT NULL,
+                    unidades_vendidas BIGINT NOT NULL,
+                    UNIQUE(metodo_pago, dia_semana)
+                );
+            """)
+            conn.commit()
+            cur.close()
+            conn.close()
+            print("Base de datos conectada y tabla verificada.")
+            break
+        except Exception as e:
+            print(f"Esperando a que PostgreSQL este listo... ({e})")
+            time.sleep(2)
+            
 
 @app.route("/resultados", methods=["GET"])
 def obtener_resultados():

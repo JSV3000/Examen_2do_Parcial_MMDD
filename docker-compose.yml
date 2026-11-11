@@ -52,3 +52,9 @@ volumes:
 networks:
   datamart_net:
     driver: bridge
+
+api:
+    build: ./api
+    container_name: api
+    hostname: api
+    restart: always
